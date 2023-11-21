@@ -19,41 +19,59 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 
 public class tablero extends JPanel implements ActionListener {
-
+    
+    // Dimensiones del tablero
     private Dimension d;
+    
+    // Fuente para mostrar puntaje
     private final Font smallfont = new Font("Helvetica", Font.BOLD, 14);
-
+    
+    // Imágenes de los personajes y fantasmas
     private Image ii;
     private final Color dotcolor = new Color(192, 192, 0);
     private Color mazecolor;
-
+    
+    // Estado del juego
     private boolean ingame = false;
     private boolean dying = false;
-
+    
+    // Tamaño del bloque, número de bloques, tamaño de la pantalla, velocidad del pacman, etc.
     private final int blocksize = 24;
     private final int nrofblocks = 15;
     private final int scrsize = nrofblocks * blocksize;
     private final int pacanimdelay = 2;
     private final int pacmananimcount = 4;
+    
+    // Número máximo de fantasmas
     private final int maxghosts = 12;
     private final int pacmanspeed = 6;
 
+    // Animaciones del pacman
     private int pacanimcount = pacanimdelay;
     private int pacanimdir = 1;
     private int pacmananimpos = 0;
     private int nrofghosts = 6;
+    
+    // Variables relacionadas con el puntaje y vidas
     private int pacsleft, score;
+    
+    // Arreglos para almacenar las posiciones y velocidades de los fantasmas y del pacman
     private int[] dx, dy;
     private int[] ghostx, ghosty, ghostdx, ghostdy, ghostspeed;
 
+    // Imágenes de los personajes y fantasmas en diferentes direcciones
     private Image ghost;
     private Image pacman1, pacman2up, pacman2left, pacman2right, pacman2down;
     private Image pacman3up, pacman3down, pacman3left, pacman3right;
     private Image pacman4up, pacman4down, pacman4left, pacman4right;
 
+    // Posición y dirección actual del pacman
     private int pacmanx, pacmany, pacmandx, pacmandy;
+    
+    // Dirección solicitada por el usuario
     private int reqdx, reqdy, viewdx, viewdy;
 
+    // Datos del nivel (laberinto)
     private final short leveldata[] = {
         19, 26, 26, 26, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 22,
         21, 0, 0, 0, 17, 16, 16, 16, 16, 16, 16, 16, 16, 16, 20,
@@ -72,18 +90,26 @@ public class tablero extends JPanel implements ActionListener {
         9, 8, 8, 8, 8, 8, 8, 8, 8, 8, 25, 24, 24, 24, 28
     };
 
+    // Velocidades válidas y máxima velocidad
     private final int validspeeds[] = {1, 2, 3, 4, 6, 8};
     private final int maxspeed = 6;
 
+    // Velocidad actual
     private int currentspeed = 3;
+    
+    // Datos del laberinto para cada posición
     private short[] screendata;
+    
+    // Temporizador para el bucle del juego
     private Timer timer;
 
+    // Constructor de la clase
     public tablero() {
 
         loadImages();
         initVariables();
 
+        // Agregar un KeyListener para capturar eventos del teclado
         addKeyListener(new TAdapter());
 
         setFocusable(true);
@@ -92,6 +118,7 @@ public class tablero extends JPanel implements ActionListener {
         setDoubleBuffered(true);
     }
 
+    // Inicialización de variables
     private void initVariables() {
 
         screendata = new short[nrofblocks * nrofblocks];
@@ -105,10 +132,12 @@ public class tablero extends JPanel implements ActionListener {
         dx = new int[4];
         dy = new int[4];
 
+        // Iniciar el temporizador para el bucle del juego
         timer = new Timer(40, this);
         timer.start();
     }
 
+    // Se llama cuando se agrega el componente al contenedor
     @Override
     public void addNotify() {
         super.addNotify();
@@ -116,6 +145,7 @@ public class tablero extends JPanel implements ActionListener {
         initGame();
     }
 
+    // Animación del pacman
     private void doAnim() {
 
         pacanimcount--;
@@ -130,14 +160,17 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
+    // Función principal para el manejo del juego
     private void playGame(Graphics2D g2d) {
 
         if (dying) {
 
+             // Si el pacman está muriendo
             death();
 
         } else {
 
+            // Si el pacman está vivo
             movePacman();
             drawPacman(g2d);
             moveGhosts(g2d);
@@ -145,6 +178,7 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
+    // Pantalla de introducción antes de comenzar el juego
     private void showIntroScreen(Graphics2D g2d) {
 
         g2d.setColor(new Color(0, 32, 48));
@@ -152,8 +186,8 @@ public class tablero extends JPanel implements ActionListener {
         g2d.setColor(Color.white);
         g2d.drawRect(50, scrsize / 2 - 30, scrsize - 100, 50);
 
-        String s = "Presiona s para empezar.";
-        Font small = new Font("Helvetica", Font.BOLD, 15);
+        String s = "Presiona Enter para empezar.";
+        Font small = new Font("Gabriola", Font.BOLD, 25);
         FontMetrics metr = this.getFontMetrics(small);
 
         g2d.setColor(Color.white);
@@ -161,6 +195,7 @@ public class tablero extends JPanel implements ActionListener {
         g2d.drawString(s, (scrsize - metr.stringWidth(s)) / 2, scrsize / 2);
     }
 
+    // Mostrar el puntaje en la pantalla
     private void drawScore(Graphics2D g) {
 
         int i;
@@ -176,6 +211,7 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
+    // Verificar si se ha completado el laberinto
     private void checkMaze() {
 
         short i = 0;
@@ -192,6 +228,7 @@ public class tablero extends JPanel implements ActionListener {
 
         if (finished) {
 
+            // Si se ha completado el laberinto
             score += 50;
 
             if (nrofghosts < maxghosts) {
@@ -206,8 +243,8 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
-    private void death() {//murio
-
+    // Función llamada cuando el pacman muere
+    private void death() {
         pacsleft--;
 
         if (pacsleft == 0) {
@@ -217,7 +254,8 @@ public class tablero extends JPanel implements ActionListener {
         continueLevel();
     }
 
-    private void moveGhosts(Graphics2D g2d) {//mover fantasmas
+    // Mover a los fantasmas
+    private void moveGhosts(Graphics2D g2d) {
 
         short i;
         int pos;
@@ -290,11 +328,13 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
+    // Dibujar el fantasma en la posición dada
     private void drawGhost(Graphics2D g2d, int x, int y) {
 
         g2d.drawImage(ghost, x, y, this);
     }
 
+    // Mover al pacman
     private void movePacman() {
 
         int pos;
@@ -328,7 +368,7 @@ public class tablero extends JPanel implements ActionListener {
                 }
             }
 
-            // Check for standstill
+            // Verificar la quietud del pacman
             if ((pacmandx == -1 && pacmandy == 0 && (ch & 1) != 0)
                     || (pacmandx == 1 && pacmandy == 0 && (ch & 4) != 0)
                     || (pacmandx == 0 && pacmandy == -1 && (ch & 2) != 0)
@@ -341,6 +381,7 @@ public class tablero extends JPanel implements ActionListener {
         pacmany = pacmany + pacmanspeed * pacmandy;
     }
 
+    // Dibujar al pacman según su dirección
     private void drawPacman(Graphics2D g2d) {
 
         if (viewdx == -1) {
@@ -354,6 +395,7 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
+    // Dibujar el pacman y sus animaciones en dirección hacia arriba
     private void drawPacmanUp(Graphics2D g2d) {
 
         switch (pacmananimpos) {
@@ -373,6 +415,7 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
+    // Dibujar el pacman y sus animaciones en dirección hacia abajo
     private void drawPacmanDown(Graphics2D g2d) {
 
         switch (pacmananimpos) {
@@ -391,6 +434,7 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
+    // Dibujar el pacman y sus animaciones en dirección hacia la izquierda
     private void drawPacnanLeft(Graphics2D g2d) {
 
         switch (pacmananimpos) {
@@ -409,6 +453,7 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
+    // Dibujar el pacman y sus animaciones en dirección hacia la derecha
     private void drawPacmanRight(Graphics2D g2d) {
 
         switch (pacmananimpos) {
@@ -427,6 +472,7 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
+    // Dibujar el laberinto
     private void drawMaze(Graphics2D g2d) {
 
         short i = 0;
@@ -466,6 +512,7 @@ public class tablero extends JPanel implements ActionListener {
         }
     }
 
+    // Inicializar el juego
     private void initGame() {
 
         pacsleft = 3;
@@ -475,6 +522,7 @@ public class tablero extends JPanel implements ActionListener {
         currentspeed = 3;
     }
 
+    // Inicializar el nivel (laberinto)
     private void initLevel() {
 
         int i;
@@ -485,6 +533,7 @@ public class tablero extends JPanel implements ActionListener {
         continueLevel();
     }
 
+    // Continuar el juego después de completar un nivel
     private void continueLevel() {
 
         short i;
@@ -518,6 +567,7 @@ public class tablero extends JPanel implements ActionListener {
         dying = false;
     }
 
+    // Cargar imágenes del juego
     private void loadImages() {
 
         ghost = new ImageIcon(getClass().getResource("../images/ghost.gif")).getImage();
@@ -537,6 +587,7 @@ public class tablero extends JPanel implements ActionListener {
 
     }
 
+    // Dibujar el laberinto y los personajes
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -544,6 +595,7 @@ public class tablero extends JPanel implements ActionListener {
         doDrawing(g);
     }
 
+    // Dibujar componentes del juego
     private void doDrawing(Graphics g) {
 
         Graphics2D g2d = (Graphics2D) g;
@@ -566,6 +618,7 @@ public class tablero extends JPanel implements ActionListener {
         g2d.dispose();
     }
 
+    // Clase interna para manejar los eventos del teclado
     class TAdapter extends KeyAdapter {
 
         @Override
@@ -574,6 +627,7 @@ public class tablero extends JPanel implements ActionListener {
             int key = e.getKeyCode();
 
             if (ingame) {
+            //Direccion del teclado.
                 if (key == KeyEvent.VK_LEFT) {
                     reqdx = -1;
                     reqdy = 0;
@@ -588,15 +642,17 @@ public class tablero extends JPanel implements ActionListener {
                     reqdy = 1;
                 } else if (key == KeyEvent.VK_ESCAPE && timer.isRunning()) {
                     ingame = false;
-                } else if (key == KeyEvent.VK_PAUSE) {
+                //Pausar el Juego con la P.
+                } else if (key == 'p' || key == 'P') {
                     if (timer.isRunning()) {
                         timer.stop();
                     } else {
                         timer.start();
                     }
                 }
+            //Iniciar el juego con ENTER.
             } else {
-                if (key == 's' || key == 'S') {
+                if (key == KeyEvent.VK_ENTER) {
                     ingame = true;
                     initGame();
                 }
@@ -622,3 +678,4 @@ public class tablero extends JPanel implements ActionListener {
         repaint();
     }
 }
+
