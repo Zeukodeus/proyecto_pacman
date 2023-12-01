@@ -1,11 +1,12 @@
 // Importación de paquetes necesarios
 package pacman;
 import java.awt.EventQueue;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+ 
 // Definición de la clase Pacman que hereda de JFrame (ventana gráfica)
 public class Pacman extends JFrame {
 
@@ -41,7 +42,7 @@ public class Pacman extends JFrame {
         setLocationRelativeTo(null);
         
         // Hace visible la ventana
-        setVisible(true);        
+        setVisible(true);
     }
 
     // Método para confirmar la salida

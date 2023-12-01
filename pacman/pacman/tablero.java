@@ -34,26 +34,33 @@ public class tablero extends JPanel implements ActionListener {
     // Estado del juego
     private boolean ingame = false;
     private boolean dying = false;
-    
+  
     // Tamaño del bloque, número de bloques, tamaño de la pantalla, velocidad del pacman, etc.
     private final int blocksize = 24;
     private final int nrofblocks = 15;
     private final int scrsize = nrofblocks * blocksize;
     private final int pacanimdelay = 2;
     private final int pacmananimcount = 4;
+    private final int pacmananimcountB = 4;
     
     // Número máximo de fantasmas
     private final int maxghosts = 12;
     private final int pacmanspeed = 6;
+    private final int pacmanspeedB = 6;
 
     // Animaciones del pacman
     private int pacanimcount = pacanimdelay;
     private int pacanimdir = 1;
     private int pacmananimpos = 0;
+    private int pacanimcountB = pacanimdelay;
+    private int pacanimdirB = 1;
+    private int pacmananimposB = 0;
     private int nrofghosts = 6;
     
     // Variables relacionadas con el puntaje y vidas
     private int pacsleft, score;
+    private int livesB = 3; 
+
     
     // Arreglos para almacenar las posiciones y velocidades de los fantasmas y del pacman
     private int[] dx, dy;
@@ -64,12 +71,18 @@ public class tablero extends JPanel implements ActionListener {
     private Image pacman1, pacman2up, pacman2left, pacman2right, pacman2down;
     private Image pacman3up, pacman3down, pacman3left, pacman3right;
     private Image pacman4up, pacman4down, pacman4left, pacman4right;
+    private Image pacmanB1, pacmanB2up, pacmanB2left, pacmanB2right, pacmanB2down;
+    private Image pacmanB3up, pacmanB3down, pacmanB3left, pacmanB3right;
+    private Image pacmanB4up, pacmanB4down, pacmanB4left, pacmanB4right;
+    
 
     // Posición y dirección actual del pacman
     private int pacmanx, pacmany, pacmandx, pacmandy;
+    private int pacmanBx, pacmanBy, pacmanBdx, pacmanBdy;
     
     // Dirección solicitada por el usuario
     private int reqdx, reqdy, viewdx, viewdy;
+    private int reqdxB, reqdyB, viewdxB, viewdyB;
 
     // Datos del nivel (laberinto)
     private final short leveldata[] = {
@@ -131,6 +144,17 @@ public class tablero extends JPanel implements ActionListener {
         ghostspeed = new int[maxghosts];
         dx = new int[4];
         dy = new int[4];
+        pacmanBx = 8 * blocksize;
+        pacmanBy = 11 * blocksize;
+        pacmanBdx = 0;
+        pacmanBdy = 0;
+        reqdxB = 0;
+        reqdyB = 0;
+        viewdxB = -1;
+        viewdyB = 0;
+        pacanimcountB = pacanimdelay;
+        pacanimdirB = 1;
+        pacmananimposB = 0;
 
         // Iniciar el temporizador para el bucle del juego
         timer = new Timer(40, this);
@@ -145,36 +169,52 @@ public class tablero extends JPanel implements ActionListener {
         initGame();
     }
 
-    // Animación del pacman
+    // Animación de los pacman
     private void doAnim() {
-
         pacanimcount--;
+        pacanimcountB--;
 
         if (pacanimcount <= 0) {
             pacanimcount = pacanimdelay;
             pacmananimpos = pacmananimpos + pacanimdir;
 
             if (pacmananimpos == (pacmananimcount - 1) || pacmananimpos == 0) {
-                pacanimdir = -pacanimdir;
+            pacanimdir = -pacanimdir;
             }
-        }
+       }
+
+        if (pacanimcountB <= 0) {
+          pacanimcountB = pacanimdelay;
+          pacmananimposB = pacmananimposB + pacanimdirB;
+
+          if (pacmananimposB == (pacmananimcountB - 1) || pacmananimposB == 0) {
+              pacanimdirB = -pacanimdirB;
+          }
+       }
     }
+
 
     // Función principal para el manejo del juego
     private void playGame(Graphics2D g2d) {
-
         if (dying) {
 
-             // Si el pacman está muriendo
-            death();
+        // Si el pacman está muriendo
+        death();
+
+        // Añadir la función deathB() para el segundo Pac-Man
+        deathB();
 
         } else {
 
-            // Si el pacman está vivo
-            movePacman();
-            drawPacman(g2d);
-            moveGhosts(g2d);
-            checkMaze();
+        // Si el pacman está vivo
+        movePacman();
+        drawPacman(g2d);
+        movePacman2();
+        drawPacman2(g2d);
+        moveGhosts(g2d);
+        checkMaze();
+        
+        
         }
     }
 
@@ -253,6 +293,31 @@ public class tablero extends JPanel implements ActionListener {
 
         continueLevel();
     }
+    
+    // Función llamada cuando el pacman muere
+    private void deathB() {
+        livesB--;
+
+        if (livesB == 0) {
+        ingame = false;
+        } else {
+        // Reiniciar la posición del segundo Pac-Man
+        pacmanBx = 8 * blocksize;
+        pacmanBy = 11 * blocksize;
+        pacmanBdx = 0;
+        pacmanBdy = 0;
+        reqdxB = 0;
+        reqdyB = 0;
+        viewdxB = -1;
+        viewdyB = 0;
+        pacanimcountB = pacanimdelay;
+        pacanimdirB = 1;
+        pacmananimposB = 0;
+        }
+        
+        continueLevel();
+    }
+
 
     // Mover a los fantasmas
     private void moveGhosts(Graphics2D g2d) {
@@ -325,6 +390,13 @@ public class tablero extends JPanel implements ActionListener {
 
                 dying = true;
             }
+            
+            if (pacmanBx > (ghostx[i] - 12) && pacmanBx < (ghostx[i] + 12)
+                    && pacmanBy > (ghosty[i] - 12) && pacmanBy < (ghosty[i] + 12)
+                    && ingame) {
+
+                dying = true;
+            }
         }
     }
 
@@ -380,6 +452,53 @@ public class tablero extends JPanel implements ActionListener {
         pacmanx = pacmanx + pacmanspeed * pacmandx;
         pacmany = pacmany + pacmanspeed * pacmandy;
     }
+    
+    // Mover al pacman 2
+    private void movePacman2() {
+
+        int pos;
+        short ch;
+
+        if (reqdxB == -pacmanBdx && reqdyB == -pacmanBdy) {
+            pacmanBdx = reqdxB;
+            pacmanBdy = reqdyB;
+            viewdxB = pacmanBdx;
+            viewdyB = pacmanBdy;
+        }
+
+        if (pacmanBx % blocksize == 0 && pacmanBy % blocksize == 0) {
+            pos = pacmanBx / blocksize + nrofblocks * (int) (pacmanBy / blocksize);
+            ch = screendata[pos];
+
+            if ((ch & 16) != 0) {
+                screendata[pos] = (short) (ch & 15);
+                score++;
+            }
+
+            if (reqdxB != 0 || reqdyB != 0) {
+                if (!((reqdxB == -1 && reqdyB == 0 && (ch & 1) != 0)
+                        || (reqdxB == 1 && reqdyB == 0 && (ch & 4) != 0)
+                        || (reqdxB == 0 && reqdyB == -1 && (ch & 2) != 0)
+                        || (reqdxB == 0 && reqdyB == 1 && (ch & 8) != 0))) {
+                    pacmanBdx = reqdxB;
+                    pacmanBdy = reqdyB;
+                    viewdxB = pacmanBdx;
+                    viewdyB = pacmanBdy;
+                }
+            }
+
+            // Verificar la quietud del pacman
+            if ((pacmanBdx == -1 && pacmanBdy == 0 && (ch & 1) != 0)
+                    || (pacmanBdx == 1 && pacmanBdy == 0 && (ch & 4) != 0)
+                    || (pacmanBdx == 0 && pacmanBdy == -1 && (ch & 2) != 0)
+                    || (pacmanBdx == 0 && pacmanBdy == 1 && (ch & 8) != 0)) {
+                pacmanBdx = 0;
+                pacmanBdy = 0;
+            }
+        }
+        pacmanBx = pacmanBx + pacmanspeedB * pacmanBdx;
+        pacmanBy = pacmanBy + pacmanspeedB * pacmanBdy;
+    }
 
     // Dibujar al pacman según su dirección
     private void drawPacman(Graphics2D g2d) {
@@ -392,6 +511,19 @@ public class tablero extends JPanel implements ActionListener {
             drawPacmanUp(g2d);
         } else {
             drawPacmanDown(g2d);
+        }
+    }
+    
+    private void drawPacman2(Graphics2D g2d) {
+        
+        if (viewdxB == -1) {
+            drawPacnanLeftB(g2d);
+        } else if (viewdxB == 1) {
+            drawPacmanRightB(g2d);
+        } else if (viewdyB == -1) {
+            drawPacmanUpB(g2d);
+        } else {
+            drawPacmanDownB(g2d);
         }
     }
 
@@ -414,6 +546,26 @@ public class tablero extends JPanel implements ActionListener {
                 break;
         }
     }
+    
+    // Dibujar el pacman y sus animaciones en dirección hacia arriba
+    private void drawPacmanUpB(Graphics2D g2d) {
+
+        switch (pacmananimpos) {
+            case 1:
+                g2d.drawImage(pacmanB2up, pacmanBx + 1, pacmanBy + 1, this);
+        
+                break;
+            case 2:
+                g2d.drawImage(pacmanB3up, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            case 3:
+                g2d.drawImage(pacmanB4up, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            default:
+                g2d.drawImage(pacmanB1, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+        }
+    }
 
     // Dibujar el pacman y sus animaciones en dirección hacia abajo
     private void drawPacmanDown(Graphics2D g2d) {
@@ -430,6 +582,25 @@ public class tablero extends JPanel implements ActionListener {
                 break;
             default:
                 g2d.drawImage(pacman1, pacmanx + 1, pacmany + 1, this);
+                break;
+        }
+    }
+    
+    // Dibujar el pacman y sus animaciones en dirección hacia abajo
+    private void drawPacmanDownB(Graphics2D g2d) {
+
+        switch (pacmananimpos) {
+            case 1:
+                g2d.drawImage(pacmanB2down, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            case 2:
+                g2d.drawImage(pacmanB3down, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            case 3:
+                g2d.drawImage(pacmanB4down, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            default:
+                g2d.drawImage(pacmanB1, pacmanBx + 1, pacmanBy + 1, this);
                 break;
         }
     }
@@ -452,6 +623,25 @@ public class tablero extends JPanel implements ActionListener {
                 break;
         }
     }
+    
+    // Dibujar el pacman y sus animaciones en dirección hacia la izquierda
+    private void drawPacnanLeftB(Graphics2D g2d) {
+
+        switch (pacmananimpos) {
+            case 1:
+                g2d.drawImage(pacmanB2left, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            case 2:
+                g2d.drawImage(pacmanB3left, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            case 3:
+                g2d.drawImage(pacmanB4left, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            default:
+                g2d.drawImage(pacmanB1, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+        }
+    }
 
     // Dibujar el pacman y sus animaciones en dirección hacia la derecha
     private void drawPacmanRight(Graphics2D g2d) {
@@ -468,6 +658,25 @@ public class tablero extends JPanel implements ActionListener {
                 break;
             default:
                 g2d.drawImage(pacman1, pacmanx + 1, pacmany + 1, this);
+                break;
+        }
+    }
+    
+    // Dibujar el pacman y sus animaciones en dirección hacia la derecha
+    private void drawPacmanRightB(Graphics2D g2d) {
+
+        switch (pacmananimpos) {
+            case 1:
+                g2d.drawImage(pacmanB2right, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            case 2:
+                g2d.drawImage(pacmanB3right, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            case 3:
+                g2d.drawImage(pacmanB4right, pacmanBx + 1, pacmanBy + 1, this);
+                break;
+            default:
+                g2d.drawImage(pacmanB1, pacmanBx + 1, pacmanBy + 1, this);
                 break;
         }
     }
@@ -584,6 +793,19 @@ public class tablero extends JPanel implements ActionListener {
         pacman2right = new ImageIcon(getClass().getResource("../images/right1.gif")).getImage();
         pacman3right = new ImageIcon(getClass().getResource("../images/right2.gif")).getImage();
         pacman4right = new ImageIcon(getClass().getResource("../images/right3.gif")).getImage();
+        pacmanB1 = new ImageIcon(getClass().getResource("../images/pacmanB.gif")).getImage();
+        pacmanB2up = new ImageIcon(getClass().getResource("../images/upB1.gif")).getImage();
+        pacmanB3up = new ImageIcon(getClass().getResource("../images/upB2.gif")).getImage();
+        pacmanB4up = new ImageIcon(getClass().getResource("../images/upB3.gif")).getImage();
+        pacmanB2down = new ImageIcon(getClass().getResource("../images/downB1.gif")).getImage();
+        pacmanB3down = new ImageIcon(getClass().getResource("../images/downB2.gif")).getImage();
+        pacmanB4down = new ImageIcon(getClass().getResource("../images/downB3.gif")).getImage();
+        pacmanB2left = new ImageIcon(getClass().getResource("../images/leftB1.gif")).getImage();
+        pacmanB3left = new ImageIcon(getClass().getResource("../images/leftB2.gif")).getImage();
+        pacmanB4left = new ImageIcon(getClass().getResource("../images/leftB3.gif")).getImage();
+        pacmanB2right = new ImageIcon(getClass().getResource("../images/rightB1.gif")).getImage();
+        pacmanB3right = new ImageIcon(getClass().getResource("../images/rightB2.gif")).getImage();
+        pacmanB4right = new ImageIcon(getClass().getResource("../images/rightB3.gif")).getImage();
 
     }
 
@@ -649,6 +871,20 @@ public class tablero extends JPanel implements ActionListener {
                     } else {
                         timer.start();
                     }
+                }
+                
+                if (key == KeyEvent.VK_A) {
+                    reqdxB = -1;
+                    reqdyB = 0;
+                } else if (key == KeyEvent.VK_D) {
+                    reqdxB = 1;
+                    reqdyB = 0;
+                } else if (key == KeyEvent.VK_W) {
+                    reqdxB = 0;
+                    reqdyB = -1;
+                } else if (key == KeyEvent.VK_S) {
+                    reqdxB = 0;
+                    reqdyB = 1;
                 }
             //Iniciar el juego con ENTER.
             } else {
